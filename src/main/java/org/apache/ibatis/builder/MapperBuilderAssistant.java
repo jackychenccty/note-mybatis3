@@ -294,6 +294,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
     }
 
     MappedStatement statement = statementBuilder.build();
+    //按照statement的id缓存到map中
     configuration.addMappedStatement(statement);
     return statement;
   }

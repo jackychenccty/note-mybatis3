@@ -651,11 +651,14 @@ public class Configuration {
     } else if (ExecutorType.REUSE == executorType) {
       executor = new ReuseExecutor(this, transaction);
     } else {
+      //默认使用simple类型
       executor = new SimpleExecutor(this, transaction);
     }
     if (cacheEnabled) {
+      //如果开启二级缓存包装一层CachingExecutor
       executor = new CachingExecutor(executor);
     }
+    //如果有插件再包装一层
     executor = (Executor) interceptorChain.pluginAll(executor);
     return executor;
   }

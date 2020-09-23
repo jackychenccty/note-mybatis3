@@ -85,6 +85,7 @@ public class CachingExecutor implements Executor {
   @Override
   public <E> List<E> query(MappedStatement ms, Object parameterObject, RowBounds rowBounds, ResultHandler resultHandler) throws SQLException {
     BoundSql boundSql = ms.getBoundSql(parameterObject);
+    //获取二级缓存CacheKey
     CacheKey key = createCacheKey(ms, parameterObject, rowBounds, boundSql);
     return query(ms, parameterObject, rowBounds, resultHandler, key, boundSql);
   }
@@ -94,13 +95,17 @@ public class CachingExecutor implements Executor {
       throws SQLException {
     Cache cache = ms.getCache();
     if (cache != null) {
+      //如果在映射器中开启二级缓存，直接返回结果
+      //如果配置了flushCache，查询也会清空缓存
       flushCacheIfRequired(ms);
       if (ms.isUseCache() && resultHandler == null) {
         ensureNoOutParams(ms, boundSql);
         @SuppressWarnings("unchecked")
         List<E> list = (List<E>) tcm.getObject(cache, key);
         if (list == null) {
+          //缓存没命中，从数据库中查询
           list = delegate.query(ms, parameterObject, rowBounds, resultHandler, key, boundSql);
+          //二级缓存与事务有关，先将结果存入事务缓存，只有事务提交后才写入二级缓存
           tcm.putObject(cache, key, list); // issue #578 and #116
         }
         return list;
